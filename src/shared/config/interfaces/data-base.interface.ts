@@ -1,8 +1,7 @@
 
-
 export interface IDatabaseConfigAttributes {
     username: string;
-    password: string;
+    password:string;
     database: string;
     host: string;
     port: number;
@@ -13,7 +12,7 @@ export interface IDatabaseConfigAttributes {
 }
 
 export interface IDatabaseConfig {
-    development:IDatabaseConfigAttributes;
+    development :IDatabaseConfigAttributes;
     production:IDatabaseConfigAttributes;
     test:IDatabaseConfigAttributes
 }

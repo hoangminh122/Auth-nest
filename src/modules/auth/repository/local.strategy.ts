@@ -11,8 +11,9 @@ export class LocalStrategy extends PassportStrategy(Strategy,'local'){
         super();
     }
 
-    async validate(username:string, password:string): Promise<any>{
-        const user = await this.authService.validateUser(username,password);
+    //login by username => default local nestjs
+    async validate(email:string, password:string): Promise<any>{
+        const user = await this.authService.validateUser(email,password);
         if(!user){
             throw new UnauthorizedException()
         }

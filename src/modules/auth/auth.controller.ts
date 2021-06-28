@@ -1,8 +1,8 @@
-import { Controller, Post, UseGuards,Request, Body } from '@nestjs/common';
+import { Controller, Post, UseGuards,Request, Body, ValidationPipe, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/input.dto';
+import { AuthDTO } from './dto/auth.dto';
 import { LocalAuthGuard } from './repository/local-auth.guard';
 
 @ApiTags('auth')
@@ -14,10 +14,16 @@ export class AuthController {
     ){
 
     }
-    // @UseGuards(AuthGuard('local'))
-    @UseGuards(LocalAuthGuard)
+    @UseGuards(AuthGuard('local'))
+    // @UseGuards(LocalAuthGuard)
     @Post('login')
-    async login(@Body() req:LoginDto,@Request() reqToken) {
-        return this.authService.login(req,reqToken);
+    @ApiResponse({ status: 200, description: 'Create new user success !.' })
+    // @ApiBody({ type: [UserEntity] })
+    async login(@Body() user: AuthDTO,@Request() req) {
+        let result = null;
+        result= await this.authService.login(user,req);
+        return result;
+        // res.status(200).send("UnauthorizedException");
+        // throw new UnauthorizedException();
     }
 }

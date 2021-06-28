@@ -1,10 +1,21 @@
 import { Module } from '@nestjs/common';
-import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
+import { JwtStrategy } from '../auth/jwt/jwt-strategy';
+import { JwtModule } from '@nestjs/jwt';
+import { jwtConstants } from '../auth/jwt/jwt-secret.constant';
+import { UserService } from './users.service';
+import { userRepository } from '../database/repository.database.provider';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
-  providers: [UsersService],
+  imports:[
+    DatabaseModule
+],
+  providers: [
+    UserService,
+    userRepository
+],
   controllers: [UsersController,],
-  exports:[UsersService]
+  exports:[UserService]
 })
-export class UsersModule {}
+export class UserModule {}

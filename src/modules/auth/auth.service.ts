@@ -1,31 +1,45 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
-
+import * as bcrypt from 'bcrypt'
+import { UserService } from '../users/users.service';
 @Injectable()
 export class AuthService {
+    private saltRounds = 10;
     constructor(
-        private usersService:UsersService,
+        private usersService:UserService,
         private jwtService:JwtService
     ){}
 
-    async validateUser(username:string,pass:string): Promise<any>{
-        const user = await this. usersService.findOne(username);
-        if(user && user.password === pass){
-            const {password, ...result} = user;
+    async validateUser(email: string, password: string): Promise<any> {
+        let comparePassword = null;
+        const user = await this.usersService.findByEmail(email);
+        if(user !== null){
+            comparePassword = await this.comparePassword(password, user.password);
+        }
+        if (comparePassword) {
+            const { password, ...result } = user;
             return result;
         }
         return null;
     }
 
-    async login(user,reqToken){
-        const payload = { 
-            username:user.username,
-            sub:reqToken.user.userId
-        };
-        return {
-            access_token:this.jwtService.sign(payload)
+   
+    async login(userObj: any,req:any) {
+        let result =null;
+        const payload = { email:req.user.dataValues.email };
+        result =  {
+            access_token: await this.jwtService.sign(payload)
         }
+        return result;
+    }
+
+    async getHash(password: string | undefined): Promise<string> {
+        return bcrypt.hash(password, this.saltRounds);
+    }
+
+    async comparePassword(attempt: string | undefined, passwordHash: string | undefined): Promise<boolean> {
+        let result = await bcrypt.compare(attempt, passwordHash);
+        return result;
     }
 
 }
