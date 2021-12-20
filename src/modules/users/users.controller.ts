@@ -1,4 +1,14 @@
-import { Controller, Get, UseGuards,Request, Param, Post, Body, Delete, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Request,
+  Param,
+  Post,
+  Body,
+  Delete,
+  Put,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { User } from 'src/entities/User';
 import { Role } from 'src/shared/enums/role-enum';
@@ -12,50 +22,52 @@ import { UserService } from './users.service';
 @Controller('users')
 @ApiBearerAuth()
 export class UsersController {
-    constructor(
-        private userService:UserService
-    ){
-    }
+  constructor(private userService: UserService) {}
 
-    @UseGuards(JwtAuthGuard)
-    @Roles(Role.Admin)
-    @Get()
-    test(@Request() req){
-        return "ok"
-    } 
+  //   @UseGuards(JwtAuthGuard)
+  //   @Roles(Role.Admin)
+  //   @Get()
+  //   test(@Request() req) {
+  //     return 'ok';
+  //   }
 
-    @Get()
-    // @ApiBearerAuth()
-    // @UseGuards(JwtAuthGuard)
-    showAllUser() {
-        return this.userService.showAll();
-    }
+  @Get()
+  // @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  showAllUser() {
+    return this.userService.showAll();
+  }
 
-    @Get('GetById/:id')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
-    showUserById(@Param('id') id: string) {
-        return this.userService.findById(id);
-    }
-    
-    @Post()
-    @ApiOperation({ summary: 'create user' })
-    async createUser(@Body() data: UserDTO) {
-        return await this.userService.create(data);
-    }
+  @Get('GetById/:id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async showUserById(@Param('id') id: string) {
+    const result = await this.userService.findById(id);
+    return {
+      code: 200,
+      success: true,
+      message: 'success',
+      result,
+    };
+  }
 
-    @Delete(':id')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
-    async destroyUser(@Param('id') id: string) {
-        return this.userService.destroy(id);
-    }
+  @Post()
+  @ApiOperation({ summary: 'create user' })
+  async createUser(@Body() data: UserDTO) {
+    return await this.userService.create(data);
+  }
 
-    @Put(':id')
-    @UseGuards(JwtAuthGuard)
-    @ApiBody({ type: [User] })
-    updateUser(@Param('id') id: string, @Body() data: UserDTO) {
-        return this.userService.update(id, data);
-    }
+  @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async destroyUser(@Param('id') id: string) {
+    return this.userService.destroy(id);
+  }
 
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBody({ type: [User] })
+  updateUser(@Param('id') id: string, @Body() data: UserDTO) {
+    return this.userService.update(id, data);
+  }
 }

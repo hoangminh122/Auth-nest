@@ -64,11 +64,7 @@ export const databaseProvider = {
     (Sequelize as any).__proto__.useCLS(namespace);
 
     const sequelize = new Sequelize({ ...config, operatorsAliases });
-    sequelize.addModels([
-      Role,
-      User,
-      UserRole
-    ]);
+    sequelize.addModels([Role, User, UserRole]);
     return sequelize.sync({ force: false });
   },
 };
