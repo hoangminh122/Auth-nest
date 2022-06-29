@@ -2,7 +2,6 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { ExtractJwt } from 'passport-jwt';
-import { Test } from 'src/shared/redis/test.constant';
 import { jwtConstants } from './jwt-secret.constant';
 
 @Injectable()

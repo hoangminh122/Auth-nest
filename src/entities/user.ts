@@ -62,7 +62,7 @@ export class User extends Model {
     public updatedAt: Date;
 
     @DeletedAt
-    @Column({  allowNull:true,field: 'daleted_at', type: DataType.DATE })
+    @Column({  allowNull:true,field: 'deleted_at', type: DataType.DATE })
     public deletedAt: Date;
 
 }
