@@ -37,8 +37,8 @@ export class AuthService {
     if (!user) {
       throw new HttpException(
         {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'Username or password invalid: ',
+          success: false,
+          error: 'NOT_FOUND'
         },
         HttpStatus.NOT_FOUND,
       );
@@ -57,7 +57,13 @@ export class AuthService {
     const payload = { email: userObj.email };
     const user = await this.validateUser(userObj.email, userObj.password);
     if (!user) {
-      throw new UnauthorizedException();
+      throw new HttpException(
+        {
+          success: false,
+          error: 'NOT_FOUND'
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
     result = {
       access_token: await this.jwtService.sign(payload),
@@ -68,7 +74,7 @@ export class AuthService {
   async register(userObj: any) {
     let result: IResponse = null;
     try {
-      await this.unitOfWork.scope(async transaction => {
+      return this.unitOfWork.scope(async transaction => {
         //Find user
         const user = await this.userRepository.findOne({
           where: {
@@ -83,12 +89,15 @@ export class AuthService {
           throw new HttpException(
             {
               success: false,
-              error: 'USER_EXIST',
+              error: 'USERNAME_OR_EMAIL_EXISTED',
             },
             HttpStatus.BAD_REQUEST,
           );
         }
-        const userNew = await this.userRepository.create(userObj);
+        const userNew = await this.userService.create(userObj);
+
+        //Hide pass 
+        userNew.password = null;
         result = {
           success: true,
           result: userNew

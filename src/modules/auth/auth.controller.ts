@@ -22,11 +22,8 @@ export class AuthController {
   // @UseGuards(LocalAuthGuard)
   @Post('login')
   @ApiResponse({ status: 200, description: 'Login user' })
-  // @ApiBody({ type: [UserEntity] })
   async login(@Body() user: AuthDTO, @Request() req) {
-    let result = null;
-    result = await this.authService.login(user, req);
-    return result;
+    return this.authService.login(user, req);
   }
 
   @Post('register')

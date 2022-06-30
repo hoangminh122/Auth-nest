@@ -1,19 +1,19 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString, IsEmail } from "class-validator";
-import { NotEmpty } from "sequelize-typescript";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsBoolean, IsOptional, IsString, IsEmail } from "class-validator";
 
 export class RegisterDTO {
-    @ApiProperty()
+    @ApiPropertyOptional()
     @IsOptional()
-    @IsEmail()
+    @IsString()
     firstName: string;
-    
-    @ApiProperty()
+
+    @ApiPropertyOptional()
     @IsOptional()
-    @IsEmail()
+    @IsString()
     lastName: string;
 
     @ApiProperty()
+    @IsString()
     @IsEmail()
     email: string;
 
@@ -24,5 +24,4 @@ export class RegisterDTO {
     @ApiProperty()
     @IsString()
     password: string;
-
 }
