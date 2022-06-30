@@ -8,6 +8,7 @@ import {
   Body,
   Delete,
   Put,
+  Query,
   ParseUUIDPipe,
   UseInterceptors,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { BlackListInterceptor } from 'src/shared/interceptor/black-list.intercep
 import { log } from 'util';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { Roles } from '../auth/role/roles.decorator';
+import { QueryUserInput } from './dto/query-user.input';
 import { UserDTO } from './dto/user.dto';
 import { UserService } from './users.service';
 
@@ -31,8 +33,8 @@ export class UsersController {
   // @UseInterceptors(BlackListInterceptor)
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  showAllUser() {
-    return this.userService.showAll();
+  showAllUser(@Query() queryUserDto: QueryUserInput) {
+    return this.userService.showAll(queryUserDto);
   }
 
   @Get('GetById/:id')
