@@ -24,15 +24,8 @@ import { UserService } from './users.service';
 export class UsersController {
   constructor(private userService: UserService) {}
 
-  //   @UseGuards(JwtAuthGuard)
-  //   @Roles(Role.Admin)
-  //   @Get()
-  //   test(@Request() req) {
-  //     return 'ok';
-  //   }
-
   @Get()
-  // @ApiBearerAuth()
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   showAllUser() {
     return this.userService.showAll();
@@ -51,12 +44,6 @@ export class UsersController {
     };
   }
 
-  @Post()
-  @ApiOperation({ summary: 'create user' })
-  async createUser(@Body() data: UserDTO) {
-    return await this.userService.create(data);
-  }
-
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -66,7 +53,6 @@ export class UsersController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiBody({ type: [User] })
   updateUser(@Param('id') id: string, @Body() data: UserDTO) {
     return this.userService.update(id, data);
   }

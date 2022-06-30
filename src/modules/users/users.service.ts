@@ -4,6 +4,9 @@ import * as bcrypt from 'bcrypt';
 import { User } from 'src/entities/User';
 import { InjectModel } from '@nestjs/sequelize';
 import { UserDTO } from './dto/user.dto';
+import * as moment from 'moment';
+import { UnitOfWork } from '../database/UnitOfWork';
+
 @Injectable()
 export class UserService {
   private saltRounds = 10;
@@ -11,6 +14,8 @@ export class UserService {
   constructor(
     @InjectModel(User)
     private userRepository: typeof User,
+    @Inject(UnitOfWork)
+    private readonly unitOfWork: UnitOfWork,
   ) {}
 
   async showAll(): Promise<User[]> {
@@ -26,13 +31,12 @@ export class UserService {
     if (!user)
       throw new HttpException(
         {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'Not Found User',
+          success: false,
+          error: 'NOT_FOUND',
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.NOT_FOUND, 
       );
-    user.password = undefined;
-    const userClone = { ...user };
+    user.password = null;
     return user;
   }
 
@@ -48,50 +52,50 @@ export class UserService {
   async create(data: UserDTO) {
     data.password = await this.getHash(data.password);
     try {
-      const user = await this.userRepository.create(data);
-      return user;
+      data.createdAt = moment().toDate();
+      return await this.userRepository.create(data);
     } catch (err) {
       throw new HttpException(
         {
-          statusCode: HttpStatus.NOT_ACCEPTABLE,
-          message: 'Error. Please check the importing file : ' + err,
+          success: false,
+          error: 'SERVICE_UNAVAILABLE',
         },
-        HttpStatus.NOT_ACCEPTABLE,
+        HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
   }
 
   async update(id: string, data: UserDTO) {
     try {
-      let todo = await this.userRepository.findOne({
-        where: {
-          id,
-        },
-      });
-      if (!todo.id) {
-        // tslint:disable-next-line:no-console
-        // console.error('user doesn\'t exist');
-        throw new HttpException(
-          {
-            status: HttpStatus.NOT_FOUND,
-            error: 'Can not found user',
+      return this.unitOfWork.scope(async transaction => {
+        let todo = await this.userRepository.findOne({
+          where: {
+            id,
           },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-      await this.userRepository.update(data, { where: { id } });
-      return await this.userRepository.findOne({
-        where: {
-          id,
-        },
-      });
+        });
+        if (!todo.id) {
+          throw new HttpException(
+            {
+              success: false,
+              error: 'NOT_FOUND',
+            },
+            HttpStatus.NOT_FOUND,
+          );
+        }
+        await this.userRepository.update(data, { where: { id } });
+        return await this.userRepository.findOne({
+          where: {
+            id,
+          },
+        });
+      })
     } catch (e) {
       throw new HttpException(
         {
-          status: HttpStatus.BAD_REQUEST,
-          error: 'update database error',
+          success: false,
+          error: 'INTERNAL_SERVER_ERROR',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
