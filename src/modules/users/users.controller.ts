@@ -8,10 +8,13 @@ import {
   Body,
   Delete,
   Put,
+  ParseUUIDPipe,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { User } from 'src/entities/User';
 import { Role } from 'src/shared/enums/role-enum';
+import { BlackListInterceptor } from 'src/shared/interceptor/black-list.interceptor';
 import { log } from 'util';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { Roles } from '../auth/role/roles.decorator';
@@ -25,6 +28,7 @@ export class UsersController {
   constructor(private userService: UserService) {}
 
   @Get()
+  // @UseInterceptors(BlackListInterceptor)
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   showAllUser() {
@@ -34,7 +38,7 @@ export class UsersController {
   @Get('GetById/:id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  async showUserById(@Param('id') id: string) {
+  async showUserById(@Param('id', new ParseUUIDPipe()) id: string) {
     const result = await this.userService.findById(id);
     return {
       code: 200,
@@ -47,13 +51,13 @@ export class UsersController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  async destroyUser(@Param('id') id: string) {
+  async destroyUser(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userService.destroy(id);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
-  updateUser(@Param('id') id: string, @Body() data: UserDTO) {
+  updateUser(@Param('id', new ParseUUIDPipe()) id: string, @Body() data: UserDTO) {
     return this.userService.update(id, data);
   }
 }

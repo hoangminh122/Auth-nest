@@ -15,14 +15,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    //role
-    // const roles = Test.role;
-    // // console.log(context.switchToHttp().getRequest())
-    // const isHasRole = roles.some((role) => payload.roles?.includes(role));
-    // if (!isHasRole) {
-    //   throw new UnauthorizedException();
-    // }
-    //end role
 
     if (!payload) {
       throw new UnauthorizedException();

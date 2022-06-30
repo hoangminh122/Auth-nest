@@ -17,6 +17,7 @@ import { ISuccessResponse } from 'src/shared/response/success-res';
 import { UnitOfWork } from '../database/UnitOfWork';
 import { UserService } from '../users/users.service';
 import { Cache } from 'cache-manager';
+import { CACHE_PREFIX } from 'src/shared/constant/cache-auth.constant';
 
 @Injectable()
 export class AuthService {
@@ -114,11 +115,55 @@ export class AuthService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-
   }
 
   async getHash(password: string | undefined): Promise<string> {
     return bcrypt.hash(password, this.saltRounds);
+  }
+
+  async logout(id: string, token: string) {
+    let result = null;
+    try {
+      return this.unitOfWork.scope(async transaction => {
+        //Find user
+        const user = await this.userRepository.findOne({
+          where: { id }
+        });
+
+        const tokenClone = token.replace('Bearer ', '');
+        if(user) {
+          //Add blacklist
+          const blacklistCache: any = await this.cacheManager.get(`${CACHE_PREFIX.BLACKLIST_TOKEN}`);
+          const blacklist = blacklistCache && blacklistCache.length > 0 ? blacklistCache : [];
+          if(blacklist) {
+            const isExist = blacklist.some(tokenItem => tokenClone == tokenItem);
+            if(!isExist) {
+              blacklist.push(tokenClone)
+              await this.cacheManager.set(`${CACHE_PREFIX.BLACKLIST_TOKEN}`, blacklist);
+            }
+          }
+          else {
+            blacklist.push(tokenClone)
+            await this.cacheManager.set(`${CACHE_PREFIX.BLACKLIST_TOKEN}`, blacklist);
+          }
+        }
+
+        result = {
+          success: true,
+          result: null
+        } as ISuccessResponse;
+        
+        return result;
+      });
+    } catch (error) {
+      throw new HttpException(
+        {
+          success: false,
+          error: 'INTERNAL_SERVER_ERROR',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async comparePassword(
