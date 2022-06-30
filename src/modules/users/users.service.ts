@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus, CACHE_MANAGER } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/entities/User';
 import { InjectModel } from '@nestjs/sequelize';
@@ -8,6 +8,8 @@ import * as moment from 'moment';
 import { UnitOfWork } from '../database/UnitOfWork';
 import { Op } from 'sequelize';
 import { QueryUserInput } from './dto/query-user.input';
+import { Cache } from 'cache-manager';
+import { CACHE_PREFIX } from 'src/shared/constant/cache-auth.constant';
 
 @Injectable()
 export class UserService {
@@ -18,6 +20,7 @@ export class UserService {
     private userModel: typeof User,
     @Inject(UnitOfWork)
     private readonly unitOfWork: UnitOfWork,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async showAll(filter: QueryUserInput): Promise<User[]> {
