@@ -48,7 +48,7 @@ $ npm run start:prod
 ## Test
 ## Installation
 ## Installation
-http://localhost:7001/api/#/users/UsersController_showAllUser
+http://localhost:7001/api
 ```bash
 # unit tests
 $ npm run test
