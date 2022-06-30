@@ -8,6 +8,7 @@ import {
   Body,
   Delete,
   Put,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { User } from 'src/entities/User';
@@ -15,6 +16,7 @@ import { Role } from 'src/shared/enums/role-enum';
 import { log } from 'util';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { Roles } from '../auth/role/roles.decorator';
+import { QueryUserInput } from './dto/query-user.input';
 import { UserDTO } from './dto/user.dto';
 import { UserService } from './users.service';
 
@@ -27,8 +29,8 @@ export class UsersController {
   @Get()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  showAllUser() {
-    return this.userService.showAll();
+  showAllUser(@Query() queryUserDto: QueryUserInput) {
+    return this.userService.showAll(queryUserDto);
   }
 
   @Get('GetById/:id')

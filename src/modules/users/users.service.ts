@@ -6,6 +6,8 @@ import { InjectModel } from '@nestjs/sequelize';
 import { UserDTO } from './dto/user.dto';
 import * as moment from 'moment';
 import { UnitOfWork } from '../database/UnitOfWork';
+import { Op } from 'sequelize';
+import { QueryUserInput } from './dto/query-user.input';
 
 @Injectable()
 export class UserService {
@@ -13,17 +15,46 @@ export class UserService {
 
   constructor(
     @InjectModel(User)
-    private userRepository: typeof User,
+    private userModel: typeof User,
     @Inject(UnitOfWork)
     private readonly unitOfWork: UnitOfWork,
   ) {}
 
-  async showAll(): Promise<User[]> {
-    return await this.userRepository.findAll<User>();
+  async showAll(filter: QueryUserInput): Promise<User[]> {
+    const condition = 
+    {
+        [Op.and]: [
+            filter.email ? {'email' : {[Op.iLike] : `%${filter.email}%` }} : {},
+            filter.name ? { [Op.or] : 
+                [
+                    {
+                        'first_name' : {[Op.iLike] : `%${filter.name}%` }
+                    },
+                    {
+                        'last_name' : {[Op.iLike] : `%${filter.name}%` }
+                    }
+                ] 
+            } 
+            : {},
+        ]
+    };
+
+    const orderDefault = [['created_at','DESC']];
+    const order = filter.sortBy ? [filter.sortBy, filter.sortType ? filter.sortType : 'DESC'] : [];
+    if(order.length > 0)
+      orderDefault.push(order);
+    
+    return await this.userModel.findAll<User>({
+      offset: filter.page ? filter.page - 1 : 0,
+      limit: filter.limit,
+      where: condition,
+      include: [],
+      order: JSON.parse(JSON.stringify(orderDefault)),
+    });
   }
 
   async findById(id: string): Promise<any> {
-    const user = await this.userRepository.findOne({
+    const user = await this.userModel.findOne({
       where: {
         id,
       },
@@ -41,7 +72,7 @@ export class UserService {
   }
 
   async findByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findOne({
+    const user = await this.userModel.findOne({
       where: {
         email,
       },
@@ -53,7 +84,7 @@ export class UserService {
     data.password = await this.getHash(data.password);
     try {
       data.createdAt = moment().toDate();
-      return await this.userRepository.create(data);
+      return await this.userModel.create(data);
     } catch (err) {
       throw new HttpException(
         {
@@ -68,7 +99,7 @@ export class UserService {
   async update(id: string, data: UserDTO) {
     try {
       return this.unitOfWork.scope(async transaction => {
-        let todo = await this.userRepository.findOne({
+        let todo = await this.userModel.findOne({
           where: {
             id,
           },
@@ -82,8 +113,8 @@ export class UserService {
             HttpStatus.NOT_FOUND,
           );
         }
-        await this.userRepository.update(data, { where: { id } });
-        return await this.userRepository.findOne({
+        await this.userModel.update(data, { where: { id } });
+        return await this.userModel.findOne({
           where: {
             id,
           },
@@ -101,7 +132,7 @@ export class UserService {
   }
 
   async destroy(id: string) {
-    await this.userRepository.destroy({
+    await this.userModel.destroy({
       where: {
         id,
       },
