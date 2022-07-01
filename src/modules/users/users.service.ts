@@ -1,24 +1,63 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus, CACHE_MANAGER } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/entities/User';
 import { InjectModel } from '@nestjs/sequelize';
 import { UserDTO } from './dto/user.dto';
+import * as moment from 'moment';
+import { UnitOfWork } from '../database/UnitOfWork';
+import { Op } from 'sequelize';
+import { QueryUserInput } from './dto/query-user.input';
+import { Cache } from 'cache-manager';
+import { CACHE_PREFIX } from 'src/shared/constant/cache-auth.constant';
+
 @Injectable()
 export class UserService {
   private saltRounds = 10;
 
   constructor(
     @InjectModel(User)
-    private userRepository: typeof User,
+    private userModel: typeof User,
+    @Inject(UnitOfWork)
+    private readonly unitOfWork: UnitOfWork,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
-  async showAll(): Promise<User[]> {
-    return await this.userRepository.findAll<User>();
+  async showAll(filter: QueryUserInput): Promise<User[]> {
+    const condition = 
+    {
+        [Op.and]: [
+            filter.email ? {'email' : {[Op.iLike] : `%${filter.email}%` }} : {},
+            filter.name ? { [Op.or] : 
+                [
+                    {
+                        'first_name' : {[Op.iLike] : `%${filter.name}%` }
+                    },
+                    {
+                        'last_name' : {[Op.iLike] : `%${filter.name}%` }
+                    }
+                ] 
+            } 
+            : {},
+        ]
+    };
+
+    const orderDefault = [['created_at','DESC']];
+    const order = filter.sortBy ? [filter.sortBy, filter.sortType ? filter.sortType : 'DESC'] : [];
+    if(order.length > 0)
+      orderDefault.push(order);
+    
+    return await this.userModel.findAll<User>({
+      offset: filter.page ? filter.page - 1 : 0,
+      limit: filter.limit,
+      where: condition,
+      include: [],
+      order: JSON.parse(JSON.stringify(orderDefault)),
+    });
   }
 
   async findById(id: string): Promise<any> {
-    const user = await this.userRepository.findOne({
+    const user = await this.userModel.findOne({
       where: {
         id,
       },
@@ -26,18 +65,17 @@ export class UserService {
     if (!user)
       throw new HttpException(
         {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'Not Found User',
+          success: false,
+          error: 'NOT_FOUND',
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.NOT_FOUND, 
       );
-    user.password = undefined;
-    const userClone = { ...user };
+    user.password = null;
     return user;
   }
 
   async findByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findOne({
+    const user = await this.userModel.findOne({
       where: {
         email,
       },
@@ -48,56 +86,56 @@ export class UserService {
   async create(data: UserDTO) {
     data.password = await this.getHash(data.password);
     try {
-      const user = await this.userRepository.create(data);
-      return user;
+      data.createdAt = moment().toDate();
+      return await this.userModel.create(data);
     } catch (err) {
       throw new HttpException(
         {
-          statusCode: HttpStatus.NOT_ACCEPTABLE,
-          message: 'Error. Please check the importing file : ' + err,
+          success: false,
+          error: 'SERVICE_UNAVAILABLE',
         },
-        HttpStatus.NOT_ACCEPTABLE,
+        HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
   }
 
   async update(id: string, data: UserDTO) {
     try {
-      let todo = await this.userRepository.findOne({
-        where: {
-          id,
-        },
-      });
-      if (!todo.id) {
-        // tslint:disable-next-line:no-console
-        // console.error('user doesn\'t exist');
-        throw new HttpException(
-          {
-            status: HttpStatus.NOT_FOUND,
-            error: 'Can not found user',
+      return this.unitOfWork.scope(async transaction => {
+        let todo = await this.userModel.findOne({
+          where: {
+            id,
           },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-      await this.userRepository.update(data, { where: { id } });
-      return await this.userRepository.findOne({
-        where: {
-          id,
-        },
-      });
+        });
+        if (!todo.id) {
+          throw new HttpException(
+            {
+              success: false,
+              error: 'NOT_FOUND',
+            },
+            HttpStatus.NOT_FOUND,
+          );
+        }
+        await this.userModel.update(data, { where: { id } });
+        return await this.userModel.findOne({
+          where: {
+            id,
+          },
+        });
+      })
     } catch (e) {
       throw new HttpException(
         {
-          status: HttpStatus.BAD_REQUEST,
-          error: 'update database error',
+          success: false,
+          error: 'INTERNAL_SERVER_ERROR',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   async destroy(id: string) {
-    await this.userRepository.destroy({
+    await this.userModel.destroy({
       where: {
         id,
       },

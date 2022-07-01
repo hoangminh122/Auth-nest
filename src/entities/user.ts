@@ -54,15 +54,15 @@ export class User extends Model {
     isActive:boolean;
 
     @CreatedAt
-    @Column({ allowNull:true, field: 'created_at', type: DataType.DATE })
+    @Column({ allowNull: true, field: 'created_at', type: DataType.DATE })
     public createdAt: Date;
 
     @UpdatedAt
-    @Column({  allowNull:true,field: 'updated_at', type: DataType.DATE })
+    @Column({  allowNull: true,field: 'updated_at', type: DataType.DATE })
     public updatedAt: Date;
 
     @DeletedAt
-    @Column({  allowNull:true,field: 'daleted_at', type: DataType.DATE })
+    @Column({  allowNull: true,field: 'deleted_at', type: DataType.DATE })
     public deletedAt: Date;
 
 }

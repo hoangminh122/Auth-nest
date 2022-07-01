@@ -1,5 +1,4 @@
 import { Column, DataType, ForeignKey, HasMany, IsUUID, Model, PrimaryKey, Sequelize, Table } from "sequelize-typescript";
-import { Board } from "./Board";
 import { Role } from "./Role";
 import { User } from "./User";
 

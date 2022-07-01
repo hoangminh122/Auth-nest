@@ -3,7 +3,6 @@ import * as cls from 'cls-hooked';
 import { Sequelize } from 'sequelize-typescript';
 import { Op } from 'sequelize';
 import { databaseConfig } from 'src/shared/config/database';
-import { Board } from 'src/entities/board';
 import { Role } from 'src/entities/Role';
 import { User } from 'src/entities/User';
 import { UserRole } from 'src/entities/UserRole';

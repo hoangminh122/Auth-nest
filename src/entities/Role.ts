@@ -32,7 +32,7 @@ export class Role extends Model {
     public updatedAt: Date;
 
     @DeletedAt
-    @Column({ field: 'daleted_at', type: DataType.DATE })
+    @Column({ field: 'deleted_at', type: DataType.DATE })
     public deletedAt: Date;
 
 }
